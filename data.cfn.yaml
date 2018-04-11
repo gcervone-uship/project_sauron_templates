@@ -20,15 +20,35 @@ Mappings:
       DBInstanceClass: 'db.r4.large'
       DBSubnetGroup: 'ml-live-us-east-1-private'
       AllocatedStorage: ''
+  DBEngine:
+    mysql:
+      Engine: mysql
+      EngineCluster: aurora-mysql
+      ParameterGroup: default.mysql5.7
+      ParameterGroupCluster: default.aurora-mysql5.7
+      Port: 3306
+    postgres:
+      Engine: postgres
+      EngineCluster: aurora-postgresql
+      ParameterGroup: default.postgres9.6
+      ParameterGroupCluster: default.aurora-postgresql9.6
+      Port: 5432
 Parameters:
   EnvType:
-    Description: 'EnvironmentType'
+    Description: 'Environment Type'
     Type: String
     Default: 'dev'
     AllowedValues:
       - 'dev'
       - 'qa'
       - 'prod'
+  DBType:
+    Description: 'DB Type'
+    Type: String
+    Default: 'postgres'
+    AllowedValues:
+      - 'postgres'
+      - 'mysql'
   DBUsername:
     Description: 'DB Username'
     Type: String
@@ -49,9 +69,9 @@ Resources:
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
       DBInstanceIdentifier: !Ref 'AWS::StackName'
       DBName: !Ref DB
-      DBParameterGroupName: 'default.postgres9.6'
+      DBParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
-      Engine: 'postgres'
+      Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
       MultiAZ: !FindInMap [ EnvironmentSettings, !Ref EnvType, MultiAZ ]
@@ -68,9 +88,10 @@ Resources:
       DBClusterIdentifier: !Ref 'AWS::StackName'
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
-      Engine: 'aurora-postgresql'
+      Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
-      DBClusterParameterGroupName: 'default.aurora-postgresql9.6'
+      DBClusterParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
+      Port: !FindInMap [ DBEngine, !Ref DBType, Port ]
       VpcSecurityGroupIds: 
         - !FindInMap [ EnvironmentSettings, !Ref EnvType, SecurityGroups ]
   RDSDBInstance1:
@@ -78,7 +99,7 @@ Resources:
     Condition: CreateProdResources
     Properties:
       DBClusterIdentifier: !Ref RDSCluster
-      Engine: 'aurora-postgresql'
+      Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       PubliclyAccessible: false
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
   RDSDBInstance2:
@@ -86,8 +107,7 @@ Resources:
     Condition: CreateProdResources
     Properties:
       DBClusterIdentifier: !Ref RDSCluster
-      Engine: 'aurora-postgresql'
-      SourceDBInstanceIdentifier: !Ref RDSDBInstance1
+      Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       PubliclyAccessible: false
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
 Outputs:
