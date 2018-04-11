@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Data Template for the Unified Pipeline
+Mappings:
+  EnvironmentSettings:
+    dev:
+      BillingEnvironment: 'dev'
+      SecurityGroups: 'sg-9b8658d2'
+      DBSubnetGroup: 'ml-dev-us-east-1-private'
+      DBInstanceClass: 'db.t2.small'
+      AllocatedStorage: '20'
+    qa:
+      BillingEnvironment: 'qa'
+      SecurityGroups: 'sg-9b8658d2'
+      DBSubnetGroup: 'ml-dev-us-east-1-private'
+      DBInstanceClass: 'db.r4.large'
+      AllocatedStorage: '100'
+    prod:
+      BillingEnvironment: 'prod'
+      SecurityGroups: 'sg-c7b8668e'
+      DBInstanceClass: 'db.r4.large'
+      DBSubnetGroup: 'ml-live-us-east-1-private'
+      AllocatedStorage: ''
+Parameters:
+  EnvType:
+    Description: 'EnvironmentType'
+    Type: String
+    Default: 'dev'
+    AllowedValues:
+      - 'dev'
+      - 'qa'
+      - 'prod'
+  DBUsername:
+    Description: 'DB Username'
+    Type: String
+  DBPassword:
+    Description: 'DB Password'
+    Type: String
+  DB:
+    Description: 'DB Name'
+    Type: String
+Conditions: 
+  CreateProdResources: !Equals [ !Ref EnvType, prod ]
+  CreateNonProdResources: !Or [ !Equals [ !Ref EnvType, dev ], !Equals [ !Ref EnvType, qa ]]
+Resources:
+  RDSDBInstanceNonProd:
+    Type: AWS::RDS::DBInstance
+    Condition: CreateNonProdResources
+    Properties:
+      DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
+      DBInstanceIdentifier: !Ref 'AWS::StackName'
+      DBName: !Ref DB
+      DBParameterGroupName: 'default.postgres9.6'
+      DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
+      Engine: 'postgres'
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      MultiAZ: !FindInMap [ EnvironmentSettings, !Ref EnvType, MultiAZ ]
+      PubliclyAccessible: false
+      VPCSecurityGroups: 
+        - !FindInMap [ EnvironmentSettings, !Ref EnvType, SecurityGroups ]
+      AllocatedStorage: !FindInMap [ EnvironmentSettings, !Ref EnvType, AllocatedStorage ]
+      StorageType: 'gp2'
+  RDSCluster:
+    Type: AWS::RDS::DBCluster
+    Condition: CreateProdResources
+    Properties:
+      DatabaseName: !Ref DB
+      DBClusterIdentifier: !Ref 'AWS::StackName'
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      Engine: 'aurora-postgresql'
+      DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
+      DBClusterParameterGroupName: 'default.aurora-postgresql9.6'
+      VpcSecurityGroupIds: 
+        - !FindInMap [ EnvironmentSettings, !Ref EnvType, SecurityGroups ]
+  RDSDBInstance1:
+    Type: AWS::RDS::DBInstance
+    Condition: CreateProdResources
+    Properties:
+      DBClusterIdentifier: !Ref RDSCluster
+      Engine: 'aurora-postgresql'
+      PubliclyAccessible: false
+      DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
+  RDSDBInstance2:
+    Type: AWS::RDS::DBInstance
+    Condition: CreateProdResources
+    Properties:
+      DBClusterIdentifier: !Ref RDSCluster
+      Engine: 'aurora-postgresql'
+      SourceDBInstanceIdentifier: !Ref RDSDBInstance1
+      PubliclyAccessible: false
+      DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
+Outputs:
+  DBHostName:
+    Description: Url to Deployed DB Cluster
+    Value: !If [ CreateProdResources, !GetAtt RDSCluster.Endpoint.Address, !GetAtt RDSDBInstanceNonProd.Endpoint.Address ]
