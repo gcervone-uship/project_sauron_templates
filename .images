@@ -1,0 +1,1 @@
+WORDPRESS_IMAGE=wordpress:4.7.3-php7.1-apache

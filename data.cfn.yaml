@@ -49,13 +49,13 @@ Parameters:
     AllowedValues:
       - 'postgres'
       - 'mysql'
-  DBUsername:
+  WORDPRESS_DB_USER:
     Description: 'DB Username'
     Type: String
-  DBPassword:
+  WORDPRESS_DB_PASSWORD:
     Description: 'DB Password'
     Type: String
-  DB:
+  WORDPRESS_DB_NAME:
     Description: 'DB Name'
     Type: String
 Conditions: 
@@ -68,12 +68,12 @@ Resources:
     Properties:
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
       DBInstanceIdentifier: !Ref 'AWS::StackName'
-      DBName: !Ref DB
+      DBName: !Ref WORDPRESS_DB_NAME
       DBParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
       Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
+      MasterUsername: !Ref WORDPRESS_DB_USER
+      MasterUserPassword: !Ref WORDPRESS_DB_PASSWORD
       MultiAZ: !FindInMap [ EnvironmentSettings, !Ref EnvType, MultiAZ ]
       PubliclyAccessible: false
       VPCSecurityGroups: 
@@ -84,10 +84,10 @@ Resources:
     Type: AWS::RDS::DBCluster
     Condition: CreateProdResources
     Properties:
-      DatabaseName: !Ref DB
+      DatabaseName: !Ref WORDPRESS_DB_NAME
       DBClusterIdentifier: !Ref 'AWS::StackName'
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
+      MasterUsername: !Ref WORDPRESS_DB_USER
+      MasterUserPassword: !Ref WORDPRESS_DB_PASSWORD
       Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
       DBClusterParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
@@ -111,6 +111,6 @@ Resources:
       PubliclyAccessible: false
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
 Outputs:
-  DBHostName:
+  WORDPRESS_DB_HOST:
     Description: Url to Deployed DB Cluster
     Value: !If [ CreateProdResources, !GetAtt RDSCluster.Endpoint.Address, !GetAtt RDSDBInstanceNonProd.Endpoint.Address ]

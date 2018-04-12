@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Frontend CDN Template for the Unified Pipeline
+Mappings:
+  EnvironmentSettings:
+    dev:
+      BillingEnvironment: 'dev'
+      DnsZoneName: 'mldev.cloud.'
+      Certificate: 'arn:aws:acm:us-east-1:999447569257:certificate/f52216d5-601a-45b8-9748-939b8356f1b0'
+    qa:
+      BillingEnvironment: 'qa'
+      DnsZoneName: 'mldev.cloud.'
+      Certificate: 'arn:aws:acm:us-east-1:999447569257:certificate/f52216d5-601a-45b8-9748-939b8356f1b0'
+    prod:
+      BillingEnvironment: 'prod'
+      DnsZoneName: 'macmillantech.com.'
+      Certificate: 'arn:aws:acm:us-east-1:517541443881:certificate/2d7c6589-51a9-4368-b52a-bccc60f51f61'
+Parameters:
+  EnvType:
+    Description: 'Environment Type'
+    Type: String
+    Default: 'dev'
+    AllowedValues:
+      - 'dev'
+      - 'qa'
+      - 'prod'
+  SubDomain:
+    Description: 'Sub Domain Name'
+    Type: String
+Conditions:
+  CreateProdResources: !Equals [ !Ref EnvType, prod ]
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Join ['', [!Ref 'AWS::StackName', '-', !Ref EnvType]]
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+  WebsiteCDN:
+    DependsOn: S3Bucket
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: CDN for S3-backed website
+        Enabled: 'true'
+        Aliases:
+          - !If [ CreateProdResources,
+            !Join [ "", [ !Ref SubDomain, ".macmillantech.com"] ],
+            !Join [ "", [ !Ref SubDomain, ".mldev.cloud"] ]
+          ]
+          - !If [ CreateProdResources,
+            !Join [ "", [ !Ref SubDomain, ".saplinglearning.com"] ],
+            !Join [ "", [ !Ref SubDomain, ".saplinglearning.me"] ]
+          ]
+          - !If [ CreateProdResources,
+            !Join [ "", [ !Ref SubDomain, ".macmillanlearning.com"] ],
+            !Join [ "", [ !Ref SubDomain, "-donotuse.macmillanlearning.com"] ]
+          ]
+          - !If [ CreateProdResources,
+            !Join [ "", [ !Ref SubDomain, ".bfwpub.com"] ],
+            !Join [ "", [ !Ref SubDomain, "-dotnotuse.bfwpub.com"] ]
+          ]
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: 'true'
+          TargetOriginId: only-origin
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+        - ErrorCachingMinTTL: 300
+          ErrorCode: 404
+          ResponseCode: 200
+          ResponsePagePath: /
+        ViewerCertificate:
+          AcmCertificateArn: !FindInMap [ EnvironmentSettings, !Ref EnvType, Certificate ]
+          SslSupportMethod: sni-only
+        Origins:
+        - DomainName: !GetAtt S3Bucket.DomainName
+          Id: only-origin
+          S3OriginConfig: {}
+
+  CDNEndpointName:
+    DependsOn: WebsiteCDN
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Join ['.', [!Ref SubDomain, !FindInMap [ EnvironmentSettings, !Ref EnvType, DnsZoneName ]]]
+      HostedZoneName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DnsZoneName ]
+      Type: CNAME
+      TTL: 60
+      ResourceRecords:
+       - !GetAtt WebsiteCDN.DomainName
+Outputs:
+  FrontEndUrl:
+    Description: Url to Deployed Stack
+    Value: !Join [ '', [ 'https://', !Ref CDNEndpointName ] ]
+  S3Bucket:
+    Description: S3 Bucket
+    Value: !Ref S3Bucket

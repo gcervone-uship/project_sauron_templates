@@ -1,0 +1,25 @@
+version: '3'
+services:
+  wordpress:
+    image: ${WORDPRESS_IMAGE}
+    ports:
+      - ${WORDPRESS_IMAGE}
+    volumes:
+      - wp:/var/www/html
+    env_file:
+      - ./.env
+    deploy:
+      mode: replicated
+      replicas: ${WP_REPLICAS}
+      update_config:
+        parallelism: ${WP_UPDATE_PARALLEL}
+        delay: 10s
+      placement:
+        constraints: [node.role == worker]
+      restart_policy:
+        condition: always
+volumes:
+  wp:
+    driver: "cloudstor:aws"
+    driver_opts:
+      perfmode: maxio
