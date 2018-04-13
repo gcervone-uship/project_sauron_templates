@@ -49,13 +49,13 @@ Parameters:
     AllowedValues:
       - 'postgres'
       - 'mysql'
-  WORDPRESS_DB_USER:
+  WordpressDBUser:
     Description: 'DB Username'
     Type: String
-  WORDPRESS_DB_PASSWORD:
+  WordpressDBPassword:
     Description: 'DB Password'
     Type: String
-  WORDPRESS_DB_NAME:
+  WordpressDBName:
     Description: 'DB Name'
     Type: String
 Conditions: 
@@ -68,12 +68,12 @@ Resources:
     Properties:
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
       DBInstanceIdentifier: !Ref 'AWS::StackName'
-      DBName: !Ref WORDPRESS_DB_NAME
+      DBName: !Ref WordpressDBName
       DBParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
       Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
-      MasterUsername: !Ref WORDPRESS_DB_USER
-      MasterUserPassword: !Ref WORDPRESS_DB_PASSWORD
+      MasterUsername: !Ref WordpressDBUser
+      MasterUserPassword: !Ref WordpressDBPassword
       MultiAZ: !FindInMap [ EnvironmentSettings, !Ref EnvType, MultiAZ ]
       PubliclyAccessible: false
       VPCSecurityGroups: 
@@ -84,10 +84,10 @@ Resources:
     Type: AWS::RDS::DBCluster
     Condition: CreateProdResources
     Properties:
-      DatabaseName: !Ref WORDPRESS_DB_NAME
+      DatabaseName: !Ref WordpressDBName
       DBClusterIdentifier: !Ref 'AWS::StackName'
-      MasterUsername: !Ref WORDPRESS_DB_USER
-      MasterUserPassword: !Ref WORDPRESS_DB_PASSWORD
+      MasterUsername: !Ref WordpressDBUser
+      MasterUserPassword: !Ref WordpressDBPassword
       Engine: !FindInMap [ DBEngine, !Ref DBType, Engine ]
       DBSubnetGroupName: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBSubnetGroup ]
       DBClusterParameterGroupName: !FindInMap [ DBEngine, !Ref DBType, ParameterGroup ]
@@ -111,6 +111,6 @@ Resources:
       PubliclyAccessible: false
       DBInstanceClass: !FindInMap [ EnvironmentSettings, !Ref EnvType, DBInstanceClass ]
 Outputs:
-  WORDPRESS_DB_HOST:
+  WordpressDBHost:
     Description: Url to Deployed DB Cluster
     Value: !If [ CreateProdResources, !GetAtt RDSCluster.Endpoint.Address, !GetAtt RDSDBInstanceNonProd.Endpoint.Address ]
