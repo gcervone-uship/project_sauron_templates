@@ -5,18 +5,18 @@ Mappings:
     dev:
       BillingEnvironment: 'dev'
       DnsZoneName: 'mldev.cloud.'
-      OriginAccessIdentity: 'origin-access-identity/cloudfront/E3FLP6OIOFR4LR'
-      Certificate: 'arn:aws:acm:us-east-1:999447569257:certificate/f52216d5-601a-45b8-9748-939b8356f1b0'
+      OriginAccessIdentity: ''
+      Certificate: ''
     qa:
       BillingEnvironment: 'qa'
       DnsZoneName: 'mldev.cloud.'
-      OriginAccessIdentity: 'origin-access-identity/cloudfront/E3FLP6OIOFR4LR'
-      Certificate: 'arn:aws:acm:us-east-1:999447569257:certificate/f52216d5-601a-45b8-9748-939b8356f1b0'
+      OriginAccessIdentity: ''
+      Certificate: ''
     prod:
       BillingEnvironment: 'prod'
       DnsZoneName: 'macmillantech.com.'
-      OriginAccessIdentity: 'origin-access-identity/cloudfront/E29WAMNL5ZX6ZK'
-      Certificate: 'arn:aws:acm:us-east-1:517541443881:certificate/2d7c6589-51a9-4368-b52a-bccc60f51f61'
+      OriginAccessIdentity: ''
+      Certificate: ''
 Parameters:
   EnvType:
     Description: 'Environment Type'
