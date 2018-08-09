@@ -4,21 +4,21 @@ Mappings:
   EnvironmentSettings:
     dev:
       BillingEnvironment: 'dev'
-      SecurityGroups: 'sg-9b8658d2'
-      DBSubnetGroup: 'ml-dev-us-east-1-private'
+      SecurityGroups: ''
+      DBSubnetGroup: ''
       DBInstanceClass: 'db.t2.small'
       AllocatedStorage: '20'
     qa:
       BillingEnvironment: 'qa'
-      SecurityGroups: 'sg-9b8658d2'
-      DBSubnetGroup: 'ml-dev-us-east-1-private'
+      SecurityGroups: ''
+      DBSubnetGroup: ''
       DBInstanceClass: 'db.r4.large'
       AllocatedStorage: '100'
     prod:
       BillingEnvironment: 'prod'
-      SecurityGroups: 'sg-c7b8668e'
+      SecurityGroups: ''
       DBInstanceClass: 'db.r4.large'
-      DBSubnetGroup: 'ml-live-us-east-1-private'
+      DBSubnetGroup: '
       AllocatedStorage: ''
   DBEngine:
     mysql:
